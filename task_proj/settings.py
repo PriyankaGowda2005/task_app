@@ -74,52 +74,45 @@ WSGI_APPLICATION = "task_proj.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
-    }
-}
+# For Vercel deployment, you MUST use PostgreSQL or another cloud database
+# SQLite will NOT work on Vercel's read-only filesystem
+postgres_url = os.environ.get("POSTGRES_URL")
+postgres_database = os.environ.get("POSTGRES_DATABASE") or os.environ.get("POSTGRES_DB")
 
-
-# Password validation
-# https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
-
-AUTH_PASSWORD_VALIDATORS = [
-    {
-        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
-    },
-    {
-        "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
-    },
-    {
-        "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
-    },
-    {
-        "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
-    },
-]
-
-
-# Internationalization
-# https://docs.djangoproject.com/en/5.2/topics/i18n/
-
-LANGUAGE_CODE = "en-us"
-
-TIME_ZONE = "UTC"
-
-USE_I18N = True
-
-USE_TZ = True
-
-
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/5.2/howto/static-files/
-
-STATIC_URL = "static/"
-STATIC_ROOT = BASE_DIR / "staticfiles"
-
-# Default primary key field type
-# https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
-
-DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+if postgres_url or postgres_database:
+    # PostgreSQL configuration for Vercel
+    if postgres_url:
+        # Parse POSTGRES_URL connection string
+        try:
+            from urllib.parse import urlparse
+            parsed = urlparse(postgres_url)
+            DATABASES = {
+                "default": {
+                    "ENGINE": "django.db.backends.postgresql",
+                    "NAME": parsed.path[1:] if parsed.path.startswith('/') else parsed.path,  # Remove leading /
+                    "USER": parsed.username or "",
+                    "PASSWORD": parsed.password or "",
+                    "HOST": parsed.hostname or "",
+                    "PORT": parsed.port or "5432",
+                }
+            }
+        except Exception as e:
+            # Fall back to individual env vars if URL parsing fails
+            DATABASES = {
+                "default": {
+                    "ENGINE": "django.db.backends.postgresql",
+                    "NAME": postgres_database or "",
+                    "USER": os.environ.get("POSTGRES_USER", ""),
+                    "PASSWORD": os.environ.get("POSTGRES_PASSWORD", ""),
+                    "HOST": os.environ.get("POSTGRES_HOST", ""),
+                    "PORT": os.environ.get("POSTGRES_PORT", "5432"),
+                }
+            }
+    else:
+        # Use individual environment variables
+        DATABASES = {
+            "default": {
+                "ENGINE": "django.db.backends.postgresql",
+                "NAME": postgres_database or "",
+                "USER": os.environ.get("POSTGRES_USER", ""),
+                "PASSWORD": os.
