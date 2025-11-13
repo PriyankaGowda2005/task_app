@@ -76,9 +76,18 @@ def handler(request):
             except:
                 pass
         
-        # Get request path
-        path = getattr(request, 'path', '/')
-        if not path:
+        # Get request path - Vercel provides this in different ways
+        path = '/'
+        if hasattr(request, 'path'):
+            path = request.path
+        elif hasattr(request, 'url'):
+            from urllib.parse import urlparse
+            parsed = urlparse(request.url)
+            path = parsed.path
+        elif hasattr(request, 'rawPath'):
+            path = request.rawPath
+        
+        if not path or path == '':
             path = '/'
         
         # Get query string
@@ -90,6 +99,8 @@ def handler(request):
                 query_string = str(request.query_string)
         elif hasattr(request, 'url') and '?' in request.url:
             query_string = request.url.split('?', 1)[1]
+        elif hasattr(request, 'rawQuery'):
+            query_string = request.rawQuery
         
         # Get headers
         headers = {}
