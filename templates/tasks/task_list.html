@@ -1,0 +1,182 @@
+{% extends 'tasks/base.html' %}
+
+{% block title %}Task List - Task Manager{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="display-5">
+        <i class="bi bi-list-check"></i> My Tasks
+    </h1>
+    <a href="{% url 'task_app:add_task' %}" class="btn btn-primary btn-lg">
+        <i class="bi bi-plus-circle"></i> Add New Task
+    </a>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card text-white bg-primary">
+            <div class="card-body">
+                <h5 class="card-title"><i class="bi bi-list-ul"></i> Total Tasks</h5>
+                <h2 class="card-text">{{ total_tasks }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-white bg-success">
+            <div class="card-body">
+                <h5 class="card-title"><i class="bi bi-check-circle"></i> Completed</h5>
+                <h2 class="card-text">{{ completed_tasks }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-white bg-warning">
+            <div class="card-body">
+                <h5 class="card-title"><i class="bi bi-clock"></i> Pending</h5>
+                <h2 class="card-text">{{ pending_tasks }}</h2>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Search and Filter Section -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" action="{% url 'task_app:task_list' %}" class="row g-3">
+            <div class="col-md-6">
+                <div class="input-group">
+                    <span class="input-group-text"><i class="bi bi-search"></i></span>
+                    <input type="text" 
+                           class="form-control" 
+                           name="search" 
+                           placeholder="Search tasks by title or description..." 
+                           value="{{ search_query }}">
+                </div>
+            </div>
+            <div class="col-md-4">
+                <select class="form-select" name="filter">
+                    <option value="">All Tasks</option>
+                    <option value="completed" {% if filter_status == 'completed' %}selected{% endif %}>Completed</option>
+                    <option value="pending" {% if filter_status == 'pending' %}selected{% endif %}>Pending</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-outline-primary w-100">
+                    <i class="bi bi-funnel"></i> Filter
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Tasks List -->
+{% if tasks %}
+    <div class="row">
+        {% for task in tasks %}
+            <div class="col-md-6 col-lg-4">
+                <div class="card task-card {% if task.completed %}task-completed{% endif %}">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <h5 class="card-title">{{ task.title }}</h5>
+                            <span class="badge {% if task.completed %}bg-success{% else %}bg-warning{% endif %} badge-custom">
+                                {% if task.completed %}
+                                    <i class="bi bi-check-circle"></i> Completed
+                                {% else %}
+                                    <i class="bi bi-clock"></i> Pending
+                                {% endif %}
+                            </span>
+                        </div>
+                        
+                        {% if task.description %}
+                            <p class="card-text text-muted">{{ task.description|truncatewords:20 }}</p>
+                        {% else %}
+                            <p class="card-text text-muted"><em>No description</em></p>
+                        {% endif %}
+                        
+                        <div class="mb-3">
+                            <small class="text-muted">
+                                <i class="bi bi-calendar"></i> Created: {{ task.created_at|date:"M d, Y" }}
+                            </small><br>
+                            <small class="text-muted">
+                                <i class="bi bi-clock-history"></i> Updated: {{ task.updated_at|timesince }} ago
+                            </small>
+                        </div>
+                        
+                        <div class="btn-group w-100" role="group">
+                            <a href="{% url 'task_app:toggle_task' task.id %}" 
+                               class="btn btn-sm {% if task.completed %}btn-warning{% else %}btn-success{% endif %}">
+                                <i class="bi bi-{% if task.completed %}arrow-counterclockwise{% else %}check{% endif %}"></i>
+                                {% if task.completed %}Mark Pending{% else %}Mark Complete{% endif %}
+                            </a>
+                            <a href="{% url 'task_app:edit_task' task.id %}" class="btn btn-sm btn-primary">
+                                <i class="bi bi-pencil"></i> Edit
+                            </a>
+                            <a href="{% url 'task_app:delete_task' task.id %}" class="btn btn-sm btn-danger">
+                                <i class="bi bi-trash"></i> Delete
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+
+    <!-- Pagination -->
+    {% if tasks.has_other_pages %}
+        <nav aria-label="Page navigation" class="mt-4">
+            <ul class="pagination justify-content-center">
+                {% if tasks.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}{% if filter_status %}&filter={{ filter_status }}{% endif %}">
+                            <i class="bi bi-chevron-double-left"></i> First
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ tasks.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if filter_status %}&filter={{ filter_status }}{% endif %}">
+                            <i class="bi bi-chevron-left"></i> Previous
+                        </a>
+                    </li>
+                {% endif %}
+                
+                <li class="page-item active">
+                    <span class="page-link">
+                        Page {{ tasks.number }} of {{ tasks.paginator.num_pages }}
+                    </span>
+                </li>
+                
+                {% if tasks.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ tasks.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if filter_status %}&filter={{ filter_status }}{% endif %}">
+                            Next <i class="bi bi-chevron-right"></i>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ tasks.paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}{% if filter_status %}&filter={{ filter_status }}{% endif %}">
+                            Last <i class="bi bi-chevron-double-right"></i>
+                        </a>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
+    {% endif %}
+{% else %}
+    <!-- Empty State -->
+    <div class="text-center py-5">
+        <i class="bi bi-inbox" style="font-size: 5rem; color: #dee2e6;"></i>
+        <h3 class="mt-3 text-muted">No tasks found</h3>
+        <p class="text-muted">
+            {% if search_query or filter_status %}
+                Try adjusting your search or filter criteria.
+            {% else %}
+                Get started by adding your first task!
+            {% endif %}
+        </p>
+        <a href="{% url 'task_app:add_task' %}" class="btn btn-primary btn-lg mt-3">
+            <i class="bi bi-plus-circle"></i> Add Your First Task
+        </a>
+    </div>
+{% endif %}
+{% endblock %}
+

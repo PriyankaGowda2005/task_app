@@ -1,0 +1,72 @@
+{% extends 'tasks/base.html' %}
+
+{% block title %}Delete Task - Task Manager{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="mb-4">
+    <h1 class="display-5 text-danger">
+        <i class="bi bi-exclamation-triangle"></i> Delete Task
+    </h1>
+    <p class="text-muted">Are you sure you want to delete this task? This action cannot be undone.</p>
+</div>
+
+<!-- Task Details Card -->
+<div class="card mb-4">
+    <div class="card-header bg-danger text-white">
+        <i class="bi bi-trash"></i> Task to be Deleted
+    </div>
+    <div class="card-body">
+        <h5 class="card-title">
+            {{ task.title }}
+            {% if task.completed %}
+                <span class="badge bg-success ms-2">Completed</span>
+            {% else %}
+                <span class="badge bg-warning ms-2">Pending</span>
+            {% endif %}
+        </h5>
+        {% if task.description %}
+            <p class="card-text">{{ task.description }}</p>
+        {% else %}
+            <p class="card-text text-muted"><em>No description</em></p>
+        {% endif %}
+        <hr>
+        <div class="row">
+            <div class="col-md-6">
+                <small class="text-muted">
+                    <i class="bi bi-calendar"></i> <strong>Created:</strong> {{ task.created_at|date:"F d, Y g:i A" }}
+                </small>
+            </div>
+            <div class="col-md-6">
+                <small class="text-muted">
+                    <i class="bi bi-clock-history"></i> <strong>Updated:</strong> {{ task.updated_at|date:"F d, Y g:i A" }}
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Confirmation Form -->
+<div class="card border-danger">
+    <div class="card-body">
+        <form method="post" action="">
+            {% csrf_token %}
+            
+            <div class="alert alert-warning" role="alert">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+                <strong>Warning!</strong> This action will permanently delete the task. This cannot be undone.
+            </div>
+            
+            <div class="d-flex justify-content-between">
+                <a href="{% url 'task_app:task_list' %}" class="btn btn-secondary btn-lg">
+                    <i class="bi bi-arrow-left"></i> Cancel
+                </a>
+                <button type="submit" class="btn btn-danger btn-lg">
+                    <i class="bi bi-trash"></i> Yes, Delete Task
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
